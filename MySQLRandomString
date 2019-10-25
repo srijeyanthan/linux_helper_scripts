@@ -1,0 +1,49 @@
+Plan A: UUID or GUID.
+Pro: readily available; unique.
+Con: bulky - 36 chars.
+
+Plan B: RAND:
+Example (run this a few times to get a feel):
+SELECT FLOOR(rand() * 90000 + 10000);
+would give you a random 5-digit number without leading zeros.
+Con: Too easy to get dups. Solution: Create the id, check to see if it is already in the table, if it is, then create another one.
+Con (minor): User might deduce that there are no more than 90K users. (But he cannot deduce how many there really are.)
+Pro: Reasonably short.
+Limit: In the example, you can't have more than 90K users; adjust the numbers up or down to have a different limit.
+
+Plan D: Full MD5:
+SELECT MD5(NOW());
+Pro: Sufficiently unlikely to get dups (unless two users signup in the same second).
+Con: Bulky (32 chars)
+Con: May have leading zero.
+Con: includes letters (but probably won't include any naughty words).
+
+Plan D: Part of MD5:
+SELECT LEFT(MD5(NOW()), 4);
+Con: Too easy to get dups. Solution: Create the id, check to see if it is already in the table, if it is, then create another one.
+Pro: Reasonably short.
+Limit: In the example, you can't have more than 64K (16^4) users; adjust the length up or down to have a different limit.
+Con: May have leading zero.
+Con: includes letters (but probably won't include any naughty words).
+
+Plan E: Encrypt/Decrypt
+Use an AUTO_INCREMENT, but give the user the encrypted version.
+Pro: Unique for sure.
+Pro: Avoids inefficiency of 'random' methods.
+Con: Bulky - 32 chars
+Con: contains letters
+Con(?): depends on a passphrase ('foo' in example below). If someone discovers the passphrase, ...
+Example: For AUTO_INCREMENT id = 123, the user id is 'C7FC2E77A3D894D2BA02F2214E37F107'
+mysql> SELECT HEX(AES_ENCRYPT(123, 'foo'));
++----------------------------------+
+| HEX(AES_ENCRYPT(123, 'foo'))     |
++----------------------------------+
+| C7FC2E77A3D894D2BA02F2214E37F107 |
++----------------------------------+
+
+mysql> SELECT AES_DECRYPT(UNHEX('C7FC2E77A3D894D2BA02F2214E37F107'), 'foo');
++---------------------------------------------------------------+
+| AES_DECRYPT(UNHEX('C7FC2E77A3D894D2BA02F2214E37F107'), 'foo') |
++---------------------------------------------------------------+
+| 123                                                           |
++---------------------------------------------------------------+
